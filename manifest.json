@@ -1,0 +1,25 @@
+{
+  "manifest_version": 2,
+
+  "name": "Auto OAuth",
+  "description": "Automatically log into sites with OAuth without having to always choose the account.",
+  "version": "1.0.0",
+
+  "options_page": "options.html",
+
+  "permissions": [
+    "storage",
+    "tabs",
+    "webNavigation",
+    "https://accounts.google.com/o/oauth2/auth/*"
+  ],
+
+  "web_accessible_resources": [
+    "images/*"
+  ],
+
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  }
+}

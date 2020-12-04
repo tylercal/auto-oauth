@@ -1,0 +1,14 @@
+.auto-oauth-box {
+    padding: 20px;
+    cursor: pointer;
+}
+
+.auto-oauth-box:hover {
+    background-color: mintcream;
+}
+
+.auto-oauth-spacer {
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+}
