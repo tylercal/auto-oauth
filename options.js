@@ -1,31 +1,17 @@
-// Saves options to chrome.storage.sync.
-function save_options() {
-    var blacklist = document.getElementById('blacklist').value;
-    chrome.storage.sync.set({
-        blacklist: blacklist
-    }, function() {
-        // Update status to let user know options were saved.
-        var status = document.getElementById('status');
-        status.textContent = 'Options saved.';
-        setTimeout(function() {
-            status.textContent = '';
-        }, 1750);
-    });
-}
-
 function error(message) {
-    let errorBox = document.getElementById("error");
-    errorBox.classList.remove('d-none')
-    errorBox.innerText = message
+    feedback("error", "message", message)
 }
 
 function message(message) {
-    let messageBox = document.getElementById("message");
-    messageBox.classList.remove('d-none')
-    messageBox.innerText = message
+    feedback("message", "error", message)
 }
 
-
+function feedback(show, hide, message) {
+    document.getElementById(hide).classList.add('d-none')
+    let box = document.getElementById("show");
+    box.classList.remove('d-none')
+    box.innerText = message
+}
 
 function deleteItem(e) {
     console.log(this.dataset.host)

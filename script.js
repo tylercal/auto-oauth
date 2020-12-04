@@ -1,5 +1,3 @@
-/* global console, chrome */
-
 (function() {
 
     function auto() {
@@ -16,7 +14,8 @@
         autoDiv.dataset.hint = value.dataset.email
 
         let autoButton = document.createElement("img")
-        autoButton.src = chrome.runtime.getURL('images/robot.png')
+        autoButton.src = chrome.runtime.getURL('images/icon.svg')
+        autoButton.width = 32
 
         let spacer = document.createElement("span");
         spacer.classList.add('auto-oauth-spacer')

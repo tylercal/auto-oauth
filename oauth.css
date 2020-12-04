@@ -1,8 +1,12 @@
 .auto-oauth-box {
-    padding: 20px;
+    padding: 0 20px;
     cursor: pointer;
 }
 
+.auto-oauth-box img{
+    max-height: unset !important;
+    width: 32px;
+}
 .auto-oauth-box:hover {
     background-color: mintcream;
 }
