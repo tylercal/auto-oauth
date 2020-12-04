@@ -1,8 +1,8 @@
 (function() {
 
     function auto() {
-        let host = new URL((new URLSearchParams(window.location.search)).get('redirect_uri')).host
-        chrome.storage.sync.set({[host]: this.dataset.hint})
+        document.querySelectorAll('.auto-oauth-box').forEach(box => box.remove())
+        chrome.runtime.sendMessage({hint: this.dataset.hint})
     }
 
 
