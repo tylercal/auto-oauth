@@ -18,7 +18,10 @@ chrome.webNavigation.onCompleted.addListener(details => {
             let url = tab.url
             let host = new URL((new URLSearchParams(url)).get('redirect_uri')).host
             if (url.indexOf("login_hint") < 0 && autoLogins[host]) {
-                chrome.tabs.update(tab.id, {url: url+"&login_hint="+autoLogins[host]})
+                let redirect = url+"&login_hint="+autoLogins[host];
+                console.log("Attempting redirect at "+new Date())
+                console.log(redirect)
+                chrome.tabs.update(tab.id, {url: redirect})
             } else {
                 chrome.tabs.insertCSS({file: 'oauth.css'})
                 chrome.tabs.executeScript( {
