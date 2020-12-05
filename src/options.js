@@ -8,7 +8,7 @@ function message(message) {
 
 function feedback(show, hide, message) {
     document.getElementById(hide).classList.add('d-none')
-    let box = document.getElementById("show");
+    let box = document.getElementById(show);
     box.classList.remove('d-none')
     box.innerText = message
 }
