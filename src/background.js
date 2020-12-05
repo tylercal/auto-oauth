@@ -1,6 +1,7 @@
 let autoLogins = {}
 
 function autoHost(url) {
+    console.log("Finding redirect for: "+url)
     return new URL((new URLSearchParams(url)).get('redirect_uri')).host
 }
 
@@ -34,12 +35,14 @@ chrome.webNavigation.onCompleted.addListener(details => {
     if (details.frameId === 0) {
         chrome.tabs.get(details.tabId, tab => {
             let url = tab.url
-            let host = autoHost(url)
-            if (url.indexOf("login_hint") < 0 && autoLogins[host]) {
-                redirect(tab, autoLogins[host])
-            } else {
-                chrome.tabs.insertCSS({file: 'styles/oauth.css'})
-                chrome.tabs.executeScript( {file: 'src/script.js'})
+            if (url.indexOf("redirect_uri") > 0) {
+                let host = autoHost(url)
+                if (url.indexOf("login_hint") < 0 && autoLogins[host]) {
+                    redirect(tab, autoLogins[host])
+                } else {
+                    chrome.tabs.insertCSS({file: 'styles/oauth.css'})
+                    chrome.tabs.executeScript( {file: 'src/script.js'})
+                }
             }
         })
     }
