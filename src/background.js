@@ -2,7 +2,7 @@ let autoLogins = {}
 
 function autoHost(url) {
     console.log("Finding redirect for: "+url)
-    return new URL((new URLSearchParams(url)).get('redirect_uri')).host
+    return new URL((new URLSearchParams(new URL(url).search)).get('redirect_uri')).host
 }
 
 function updateItems() {

@@ -1,6 +1,11 @@
 (function() {
+
+    function parseHost(url) {
+        return new URL((new URLSearchParams(url)).get('redirect_uri')).host
+    }
+
     let options = []
-    let host = new URL((new URLSearchParams(window.location.href)).get('redirect_uri')).host
+    let host = parseHost(window.location.search)
     document.querySelectorAll('.table[data-test-id]').forEach(value => {
         options.push(value.dataset.testId)
     })
