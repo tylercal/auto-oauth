@@ -11,14 +11,14 @@ function updateItems() {
     })
 }
 
+updateItems();
+
 function redirect(tab, hint) {
     let redirect = tab.url+"&login_hint="+hint;
     console.log("Attempting redirect at "+new Date())
     console.log(redirect)
     chrome.tabs.update(tab.id, {url: redirect})
 }
-
-updateItems();
 
 // Storage was updated by another browser instance
 chrome.storage.onChanged.addListener(changes => {
@@ -27,8 +27,12 @@ chrome.storage.onChanged.addListener(changes => {
 
 // Storage was updated by user action on the active tab
 chrome.runtime.onMessage.addListener((request, sender) => {
-    chrome.storage.sync.set({[autoHost(sender.tab.url)]: request.hint})
-    redirect(sender.tab, request.hint)
+    if (request.addAuto) {
+        chrome.storage.sync.set({[request.host]: request.addAuto})
+        chrome.tabs.query({active: true}, (tabs)=>{
+            redirect(tabs[0], request.addAuto)
+        })
+    }
 })
 
 chrome.webNavigation.onCompleted.addListener(details => {
@@ -36,17 +40,16 @@ chrome.webNavigation.onCompleted.addListener(details => {
         chrome.tabs.get(details.tabId, tab => {
             let url = tab.url
             if (url.indexOf("redirect_uri") > 0) {
+                chrome.pageAction.show(details.tabId)
                 let host = autoHost(url)
                 if (url.indexOf("login_hint") < 0 && autoLogins[host]) {
                     redirect(tab, autoLogins[host])
-                } else {
-                    chrome.tabs.insertCSS({file: 'styles/oauth.css'})
-                    chrome.tabs.executeScript( {file: 'src/script.js'})
                 }
             }
         })
     }
 }, {url: [
-        {hostEquals: 'accounts.google.com'},
-        {pathPrefix: 'o/oauth2/auth/oauthchooseaccount'}]
+        {urlPrefix: 'https://accounts.google.com/o/oauth2/auth/oauthchooseaccount'},
+        {urlPrefix: 'https://login.microsoftonline.com/common/oauth2/'},
+    ]
 })

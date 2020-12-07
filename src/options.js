@@ -33,7 +33,7 @@ function restore_options() {
         Object.entries(items).forEach(value => {
             let host = value[0]
             let id = value[1]
-            row = example.cloneNode(true)
+            let row = example.cloneNode(true)
             row.classList.remove('d-none')
             row.querySelector(".host").value = host
             row.querySelector(".id").value = id
