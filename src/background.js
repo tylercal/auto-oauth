@@ -29,9 +29,7 @@ chrome.storage.onChanged.addListener(changes => {
 chrome.runtime.onMessage.addListener((request, sender) => {
     if (request.addAuto) {
         chrome.storage.sync.set({[request.host]: request.addAuto})
-        chrome.tabs.query({active: true}, (tabs)=>{
-            redirect(tabs[0], request.addAuto)
-        })
+        redirect(request.tab, request.addAuto)
     }
 })
 
