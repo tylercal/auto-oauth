@@ -27,7 +27,7 @@
     "tabs",
     "webNavigation",
     "https://accounts.google.com/o/oauth2/auth/*",
-    "https://login.microsoftonline.com/common/oauth2*"
+    "https://login.microsoftonline.com/*"
   ],
 
   "web_accessible_resources": [
