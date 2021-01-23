@@ -1,7 +1,9 @@
 (function() {
 
-    function parseHost(url) {
-        return new URL((new URLSearchParams(url)).get('redirect_uri')).host
+    function parseHost(search) {
+        let redirectUri = (new URLSearchParams(search)).get('redirect_uri');
+        redirectUri = redirectUri.replace('storagerelay://https/', 'https://')
+        return new URL(redirectUri).host
     }
 
     let options = []

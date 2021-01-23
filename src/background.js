@@ -14,7 +14,7 @@ function updateItems() {
 updateItems();
 
 function redirect(tab, hint) {
-    let redirect = tab.url+"&login_hint="+hint;
+    let redirect = tab.url.replace(/prompt=[^&]+/, '')+"&login_hint="+hint;
     console.log("Attempting redirect at "+new Date())
     console.log(redirect)
     chrome.tabs.update(tab.id, {url: redirect})
