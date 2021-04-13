@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Auto SSO Options</title>
+    <title>Auto OAuth Options</title>
     <link rel="stylesheet" href="../styles/bootstrap.min.css">
 </head>
 
@@ -23,6 +23,7 @@
     </div>
 
     <div id="error" class="alert alert-danger d-none"></div>
+    <div id="warn" class="alert alert-warning d-none"></div>
     <div id="message" class="alert alert-success d-none"></div>
 
     <form id="items">
@@ -39,6 +40,16 @@
         </div>
     </form>
 
+    <div class="my-5 row d-grid gap-3">
+        <div class="col-2">
+            <a role="button" class="btn btn-outline-secondary" id="export">Export Settings</a>
+        </div>
+
+        <div class="custom-file col-4">
+            <input type="file" id="upload" class="custom-file-input">
+            <label class="custom-file-label" for="upload">Import Settings File</label>
+        </div>
+    </div>
 </div>
 
 <script src="options.js"></script>

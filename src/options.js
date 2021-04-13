@@ -1,13 +1,19 @@
 function error(message) {
-    feedback("error", "message", message)
+    feedback("error", message)
+}
+
+function warn(message) {
+    feedback("warn", message)
 }
 
 function message(message) {
-    feedback("message", "error", message)
+    feedback("message", message)
 }
 
-function feedback(show, hide, message) {
-    document.getElementById(hide).classList.add('d-none')
+function feedback(show, message) {
+    ["error", "warn", "message"].forEach(value => {
+        if (show !== value) document.getElementById(value).classList.add('d-none')
+    })
     let box = document.getElementById(show);
     box.classList.remove('d-none')
     box.innerText = message
@@ -26,22 +32,47 @@ function deleteItem(e) {
     e.preventDefault()
 }
 
+function hydrateForm(items) {
+    let form = document.getElementById("items")
+    let example = document.getElementById("example")
+    Object.entries(items).forEach(value => {
+        let host = value[0]
+        let id = value[1]
+        let row = example.cloneNode(true)
+        row.classList.remove('d-none')
+        row.removeAttribute('id')
+        row.querySelector(".host").value = host
+        row.querySelector(".id").value = id
+        let deleteBtn = row.querySelector(".btn-danger");
+        deleteBtn.dataset.host = host
+        deleteBtn.addEventListener('click', deleteItem)
+        form.prepend(row)
+    })
+    initExport(items)
+}
+
 function restore_options() {
     chrome.storage.sync.get(function(items) {
-        let form = document.getElementById("items")
-        let example = document.getElementById("example")
-        Object.entries(items).forEach(value => {
-            let host = value[0]
-            let id = value[1]
-            let row = example.cloneNode(true)
-            row.classList.remove('d-none')
-            row.querySelector(".host").value = host
-            row.querySelector(".id").value = id
-            let deleteBtn = row.querySelector(".btn-danger");
-            deleteBtn.dataset.host = host
-            deleteBtn.addEventListener('click', deleteItem)
-            form.prepend(row)
-        })
+        hydrateForm(items);
     });
 }
+
+function initExport(settings) {
+    e = document.getElementById("export")
+    e.href = 'data:text/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(settings))
+    e.download = 'auto-oauth-export.json'
+}
+
+function importSettings() {
+    const fileReader = new FileReader()
+    fileReader.onload = function (e) {
+        const settings = JSON.parse(e.target.result.toString())
+        document.querySelectorAll('.form-row:not(#example)').forEach(option => option.remove())
+        hydrateForm(settings)
+        chrome.storage.sync.set(settings, () => message("Import complete."))
+    }
+    fileReader.readAsText(this.files[0], "UTF-8")
+}
+
+document.getElementById('upload').addEventListener('change', importSettings)
 document.addEventListener('DOMContentLoaded', restore_options);
