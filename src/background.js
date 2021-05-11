@@ -48,7 +48,7 @@ chrome.webNavigation.onCompleted.addListener(details => {
         })
     }
 }, {url: [
-        {urlPrefix: 'https://accounts.google.com/o/oauth2/auth/oauthchooseaccount'},
+        {urlPrefix: 'https://accounts.google.com/o/oauth2/'},
         {urlPrefix: 'https://login.microsoftonline.com/'},
     ]
 })
