@@ -8,11 +8,14 @@
 
     let options = []
     let host = parseHost(window.location.search)
+
+    // microsoft
     document.querySelectorAll('.table[data-test-id]').forEach(value => {
         options.push(value.dataset.testId)
     })
 
-    document.querySelectorAll('#profileIdentifier').forEach(value => {
+    // google
+    document.querySelectorAll('div[data-email]').forEach(value => {
         options.push(value.dataset.email)
     })
 
