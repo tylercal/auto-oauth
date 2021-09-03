@@ -38,7 +38,6 @@ chrome.webNavigation.onCompleted.addListener(details => {
         chrome.tabs.get(details.tabId, tab => {
             let url = tab.url
             if (url.indexOf("redirect_uri") > 0) {
-                console.log("Found oauth login page "+url)
                 chrome.pageAction.show(details.tabId)
                 let host = autoHost(url)
                 if (url.indexOf("login_hint") < 0 && autoLogins[host]) {
