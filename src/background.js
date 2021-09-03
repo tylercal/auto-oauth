@@ -44,6 +44,9 @@ chrome.webNavigation.onCompleted.addListener(details => {
                     chrome.tabs.executeScript(tab.id, {file: 'src/redirecting.js'})
                     redirect(tab, autoLogins[host])
                 }
+                if (url.indexOf("domain_hint") > 0) {
+                    chrome.tabs.executeScript(tab.id, {file: 'src/prefill.js'})
+                }
             }
         })
     }
