@@ -7,7 +7,10 @@ function paramValue(url, key) {
 
 function autoHost(url) {
     console.log("Finding redirect for: "+url)
-    return new URL(paramValue(url, 'redirect_uri')).host
+    return new URL(
+        paramValue(url, 'redirect_uri')
+        .replace('storagerelay://https', 'https:/') // need to remove non URL protocol
+    ).host
 }
 
 function hostFromSaml(url) {
@@ -39,6 +42,10 @@ chrome.storage.onChanged.addListener(changes => {
     chrome.storage.sync.get(updateItems)
 })
 
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+    chrome.tabs.executeScript(tab.id, {file: 'src/show_menu.js'})
+})
+
 chrome.runtime.onMessage.addListener((request, sender) => {
     if (request.addAuto) { // Storage was updated by user action on the active tab
         chrome.storage.sync.set({[request.host]: request.addAuto})
@@ -62,6 +69,7 @@ chrome.webNavigation.onCompleted.addListener(details => {
 
             if (host) {
                 chrome.pageAction.show(details.tabId)
+                chrome.contextMenus.create({id: 'auto-oauth',title: "Auto OAuth..."})
                 hostMap[tab.id] = host
                 if (url.indexOf("login_hint") < 0 && autoLogins[host]) {
                     chrome.tabs.executeScript(tab.id, {file: 'src/redirecting.js'})

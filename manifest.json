@@ -3,7 +3,7 @@
 
   "name": "Auto OAuth",
   "description": "Automatically log into sites with OAuth without having to always choose the account.",
-  "version": "1.0.7",
+  "version": "1.1.0",
 
   "options_page": "src/options.html",
 
@@ -25,13 +25,15 @@
   "permissions": [
     "storage",
     "tabs",
+    "contextMenus",
     "webNavigation",
     "https://accounts.google.com/o/oauth2/*",
     "https://login.microsoftonline.com/*"
   ],
 
   "web_accessible_resources": [
-    "images/*"
+    "images/*",
+    "src/menu.html"
   ],
 
   "background": {

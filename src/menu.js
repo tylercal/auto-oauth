@@ -5,6 +5,11 @@
     let host = ''
     let tab = null
 
+    document.getElementById('cancel-auto').addEventListener("click", () => {
+        window.top.postMessage("auto-cancel", "*") // close iFrame
+        window.close() // close popup menu
+    })
+
     function addAuto() {
         // 4. the user as selected their auto login, background will redirect after storing
         document.getElementById('done').classList.remove('d-none')
@@ -15,7 +20,7 @@
         setTimeout(()=>{window.close()}, 1500)
     }
 
-    chrome.runtime.onMessage.addListener(function(request, sender) {
+    chrome.runtime.onMessage.addListener(function populate(request, sender) {
         if (request.options && sender.tab.id === tab.id) {
             // 3. the script reads the options on the page, render them in the popup menu
             document.getElementById('host').innerText = host
@@ -27,6 +32,7 @@
                 button.addEventListener('click', addAuto)
                 choiceList.append(button)
             })
+            chrome.runtime.onMessage.removeListener(populate) // Everything is filled out, no more updates
         } else if (request.requestedHost) {
             // 2. background.js responses with the host for this tab, inject the script file to read the page
             if (request.requestedHost.tabId === tab.id) {
