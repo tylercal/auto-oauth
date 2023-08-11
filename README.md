@@ -10,6 +10,7 @@ This extension allows you to choose a selected account per site that you'll alwa
 in the future - one fewer click!
 
 Release Notes:
+* 1.1.1 - Fix a bug that did not handle encoded redirect URLs
 * 1.1.0 - Handle Auth in popup windows via a new context menu option
 * 1.0.7 - Add detection for SAML based logins
 * 1.0.6 - Help account choosing in Microsoft OAuth by pre-filling domains when available

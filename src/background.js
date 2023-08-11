@@ -58,7 +58,7 @@ chrome.runtime.onMessage.addListener((request, sender) => {
 chrome.webNavigation.onCompleted.addListener(details => {
     if (details.frameId === 0) {
         chrome.tabs.get(details.tabId, tab => {
-            let url = tab.url
+            let url = decodeURI(tab.url)
 
             let host = null
             if (url.indexOf("redirect_uri") > 0) {
