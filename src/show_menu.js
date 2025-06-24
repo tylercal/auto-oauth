@@ -1,4 +1,5 @@
 (function() {
+    console.log('show_menu.js loaded')
     let frame = document.createElement('iframe')
     frame.src = chrome.extension.getURL("src/menu.html")
     frame.style.position = 'fixed'
@@ -12,3 +13,5 @@
         if (ev.data === "auto-cancel") document.getElementById('auto-oauth-frame').remove()
     })
 })()
+
+console.log('show_menu.js loaded !!')

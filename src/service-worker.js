@@ -1,3 +1,5 @@
+import './pako.js'
+
 let autoLogins = {}
 let hostMap = {}
 
@@ -43,7 +45,10 @@ chrome.storage.onChanged.addListener(changes => {
 })
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-    chrome.tabs.executeScript(tab.id, {file: 'src/show_menu.js'})
+    console.log("Context click")
+    chrome.scripting.executeScript({target: {tabId: tab.id}, files: ['src/show_menu.js']})
+        .then(() => console.log("Menu shown"))
+        .catch((err) => console.warn("Could not show menu", err))
 })
 
 chrome.runtime.onMessage.addListener((request, sender) => {
@@ -55,7 +60,14 @@ chrome.runtime.onMessage.addListener((request, sender) => {
     }
 })
 
+console.log("Service worker loaded")
+
+
+const GOOGLE = 'https://accounts.google.com/o/oauth2/';
+const MSFT = 'https://login.microsoftonline.com/';
+
 chrome.webNavigation.onCompleted.addListener(details => {
+    console.log("Navigation completed")
     if (details.frameId === 0) {
         chrome.tabs.get(details.tabId, tab => {
             let url = decodeURI(tab.url)
@@ -68,11 +80,10 @@ chrome.webNavigation.onCompleted.addListener(details => {
             }
 
             if (host) {
-                chrome.pageAction.show(details.tabId)
-                chrome.contextMenus.create({id: 'auto-oauth',title: "Auto OAuth..."})
+                chrome.contextMenus.create({id: 'auto-oauth',title: "Auto OAuth...", documentUrlPatterns: [GOOGLE+"*", MSFT+"*"]})
                 hostMap[tab.id] = host
                 if (url.indexOf("login_hint") < 0 && autoLogins[host]) {
-                    chrome.tabs.executeScript(tab.id, {file: 'src/redirecting.js'})
+                    chrome.scripting.executeScript({target: {tabId: tab.id}, files: ['src/redirecting.js']})
                     redirect(tab, autoLogins[host])
                 }
 
@@ -83,7 +94,7 @@ chrome.webNavigation.onCompleted.addListener(details => {
         })
     }
 }, {url: [
-        {urlPrefix: 'https://accounts.google.com/o/oauth2/'},
-        {urlPrefix: 'https://login.microsoftonline.com/'},
+        {urlPrefix: GOOGLE},
+        {urlPrefix: MSFT},
     ]
 })
