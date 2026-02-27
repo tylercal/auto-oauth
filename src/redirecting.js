@@ -4,7 +4,7 @@
     let icon = document.createElement('object')
 
     title.innerText = "Auto choosing..."
-    icon.data = chrome.extension.getURL("images/icon.svg")
+    icon.data = chrome.runtime.getURL("images/icon.svg")
     icon.width = '64'
     icon.height = '64'
 

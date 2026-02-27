@@ -10,6 +10,7 @@ This extension allows you to choose a selected account per site that you'll alwa
 in the future - one fewer click!
 
 Release Notes:
+* 1.2.0 - Migrate to Manifest V3; add support for Google's new v3 signin flow; fix SAML detection bug
 * 1.1.1 - Fix a bug that did not handle encoded redirect URLs
 * 1.1.0 - Handle Auth in popup windows via a new context menu option
 * 1.0.7 - Add detection for SAML based logins

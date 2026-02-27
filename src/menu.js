@@ -1,4 +1,4 @@
-(function() {
+(async function() {
 
     let example = document.getElementById("example")
     let choiceList = document.getElementById("choices")
@@ -11,7 +11,7 @@
     })
 
     function addAuto() {
-        // 4. the user as selected their auto login, background will redirect after storing
+        // 4. the user has selected their auto login, background will redirect after storing
         document.getElementById('done').classList.remove('d-none')
         document.querySelectorAll('button').forEach(btn => {
             btn.classList.add('d-none')
@@ -32,19 +32,18 @@
                 button.addEventListener('click', addAuto)
                 choiceList.append(button)
             })
-            chrome.runtime.onMessage.removeListener(populate) // Everything is filled out, no more updates
-        } else if (request.requestedHost) {
-            // 2. background.js responses with the host for this tab, inject the script file to read the page
-            if (request.requestedHost.tabId === tab.id) {
-                host = request.requestedHost.host
-                chrome.tabs.executeScript({file: 'src/script.js'})
-            }
+            chrome.runtime.onMessage.removeListener(populate)
         }
     });
 
-    chrome.tabs.query( {active: true, currentWindow: true}, tabs => {
-        // 1. determine what tab we're in and request the host for that tab from background.js
-        tab = tabs[0]
-        chrome.runtime.sendMessage({hostForTabId: tab.id})
-    })
-})();
+    // 1. determine what tab we're in
+    let tabs = await chrome.tabs.query({active: true, currentWindow: true})
+    tab = tabs[0]
+
+    // 2. read the host directly from session storage, then inject the script to read the page
+    let result = await chrome.storage.session.get(String(tab.id))
+    host = result[String(tab.id)]
+    if (host) {
+        await chrome.scripting.executeScript({target: {tabId: tab.id}, files: ['src/script.js']})
+    }
+})()

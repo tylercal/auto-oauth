@@ -19,17 +19,16 @@ function feedback(show, message) {
     box.innerText = message
 }
 
-function deleteItem(e) {
-    console.log(this.dataset.host)
-    chrome.storage.sync.remove(this.dataset.host, () => {
-        if (chrome.runtime.lastError) {
-            error("Couldn't delete that rule.")
-        } else {
-            message("Removed auto-auth for "+this.dataset.host)
-        }
-    })
-    this.parentElement.parentElement.remove()
+async function deleteItem(e) {
     e.preventDefault()
+    console.log(this.dataset.host)
+    try {
+        await chrome.storage.sync.remove(this.dataset.host)
+        message("Removed auto-auth for "+this.dataset.host)
+    } catch (err) {
+        error("Couldn't delete that rule.")
+    }
+    this.parentElement.parentElement.remove()
 }
 
 function hydrateForm(items) {
@@ -51,10 +50,9 @@ function hydrateForm(items) {
     initExport(items)
 }
 
-function restore_options() {
-    chrome.storage.sync.get(function(items) {
-        hydrateForm(items);
-    });
+async function restore_options() {
+    let items = await chrome.storage.sync.get()
+    hydrateForm(items)
 }
 
 function initExport(settings) {
@@ -63,16 +61,17 @@ function initExport(settings) {
     e.download = 'auto-oauth-export.json'
 }
 
-function importSettings() {
+async function importSettings() {
     const fileReader = new FileReader()
-    fileReader.onload = function (e) {
+    fileReader.onload = async function (e) {
         const settings = JSON.parse(e.target.result.toString())
         document.querySelectorAll('.form-row:not(#example)').forEach(option => option.remove())
         hydrateForm(settings)
-        chrome.storage.sync.set(settings, () => message("Import complete."))
+        await chrome.storage.sync.set(settings)
+        message("Import complete.")
     }
     fileReader.readAsText(this.files[0], "UTF-8")
 }
 
 document.getElementById('upload').addEventListener('change', importSettings)
-document.addEventListener('DOMContentLoaded', restore_options);
+document.addEventListener('DOMContentLoaded', restore_options)

@@ -1,6 +1,6 @@
 (function() {
     let frame = document.createElement('iframe')
-    frame.src = chrome.extension.getURL("src/menu.html")
+    frame.src = chrome.runtime.getURL("src/menu.html")
     frame.style.position = 'fixed'
     frame.style.zIndex = '9999999'
     frame.style.width = '100%'

@@ -1,5 +1,8 @@
-let autoLogins = {}
-let hostMap = {}
+importScripts('pako.js')
+
+chrome.storage.session.setAccessLevel({accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS'})
+
+chrome.action.disable()
 
 function paramValue(url, key) {
     return (new URLSearchParams(new URL(url).search)).get(key)
@@ -18,72 +21,78 @@ function hostFromSaml(url) {
     let component = decodeURIComponent(paramValue(url, 'SAMLRequest'))
     let charData = pako.inflateRaw(new Uint8Array(atob(component).split('').map(function(x){return x.charCodeAt(0);})))
     let xml = String.fromCharCode.apply(null, new Uint16Array(charData))
-    let document = (new DOMParser()).parseFromString(xml, "text/xml");
-    return new URL(document.getElementsByTagName("saml:Issuer")[0].firstChild.nodeValue).host
+    let match = xml.match(/<saml:Issuer[^>]*>([^<]+)<\/saml:Issuer>/)
+    if (!match) return null
+    return new URL(match[1]).host
 }
-
-function updateItems() {
-    chrome.storage.sync.get(items => {
-        autoLogins = items
-    })
-}
-
-updateItems();
 
 function redirect(tab, hint) {
-    let redirect = tab.url.replace(/prompt=[^&]+/, '')+"&login_hint="+hint;
+    let url = tab.url
+    let dest
+
+    if (url.indexOf('/v3/signin/') > 0) {
+        // v3 accountchooser ignores login_hint, so redirect via the classic OAuth endpoint
+        let params = new URLSearchParams(new URL(url).search)
+        let oauthParams = new URLSearchParams()
+        for (let key of ['client_id', 'redirect_uri', 'response_type', 'scope', 'state']) {
+            if (params.has(key)) oauthParams.set(key, params.get(key))
+        }
+        oauthParams.set('login_hint', hint)
+        dest = 'https://accounts.google.com/o/oauth2/auth?' + oauthParams.toString()
+    } else {
+        dest = url.replace(/prompt=[^&]+/, '') + "&login_hint=" + hint
+    }
+
     console.log("Attempting redirect at "+new Date())
-    console.log(redirect)
-    chrome.tabs.update(tab.id, {url: redirect})
+    console.log(dest)
+    chrome.tabs.update(tab.id, {url: dest})
 }
 
-// Storage was updated by another browser instance
-chrome.storage.onChanged.addListener(changes => {
-    chrome.storage.sync.get(updateItems)
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.contextMenus.create({id: 'auto-oauth', title: "Auto OAuth..."})
 })
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-    chrome.tabs.executeScript(tab.id, {file: 'src/show_menu.js'})
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+    await chrome.scripting.executeScript({target: {tabId: tab.id}, files: ['src/show_menu.js']})
 })
 
 chrome.runtime.onMessage.addListener((request, sender) => {
-    if (request.addAuto) { // Storage was updated by user action on the active tab
+    if (request.addAuto) {
         chrome.storage.sync.set({[request.host]: request.addAuto})
         redirect(request.tab, request.addAuto)
-    } else if (request.hostForTabId) { // A request was made to know the parsed host for a tab's URL
-        chrome.runtime.sendMessage({requestedHost: {tabId: request.hostForTabId, host: hostMap[request.hostForTabId]}})
     }
 })
 
-chrome.webNavigation.onCompleted.addListener(details => {
-    if (details.frameId === 0) {
-        chrome.tabs.get(details.tabId, tab => {
-            let url = decodeURI(tab.url)
+chrome.webNavigation.onCompleted.addListener(async (details) => {
+    if (details.frameId !== 0) return
 
-            let host = null
-            if (url.indexOf("redirect_uri") > 0) {
-                host = autoHost(url)
-            } else if (url.indexOf("SAMLRequest")) {
-                host = hostFromSaml(url)
-            }
+    let tab = await chrome.tabs.get(details.tabId)
+    let url = decodeURI(tab.url)
 
-            if (host) {
-                chrome.pageAction.show(details.tabId)
-                chrome.contextMenus.create({id: 'auto-oauth',title: "Auto OAuth..."})
-                hostMap[tab.id] = host
-                if (url.indexOf("login_hint") < 0 && autoLogins[host]) {
-                    chrome.tabs.executeScript(tab.id, {file: 'src/redirecting.js'})
-                    redirect(tab, autoLogins[host])
-                }
+    let host = null
+    if (url.indexOf("redirect_uri") > 0) {
+        host = autoHost(url)
+    } else if (url.indexOf("SAMLRequest") > 0) {
+        host = hostFromSaml(url)
+    }
 
-                if (url.indexOf("domain_hint") > 0) {
-                    chrome.tabs.executeScript(tab.id, {file: 'src/prefill.js'})
-                }
-            }
-        })
+    if (host) {
+        chrome.action.enable(details.tabId)
+        await chrome.storage.session.set({[String(tab.id)]: host})
+
+        let items = await chrome.storage.sync.get(host)
+        if (url.indexOf("login_hint") < 0 && items[host]) {
+            await chrome.scripting.executeScript({target: {tabId: tab.id}, files: ['src/redirecting.js']})
+            redirect(tab, items[host])
+        }
+
+        if (url.indexOf("domain_hint") > 0) {
+            await chrome.scripting.executeScript({target: {tabId: tab.id}, files: ['src/prefill.js']})
+        }
     }
 }, {url: [
         {urlPrefix: 'https://accounts.google.com/o/oauth2/'},
+        {urlPrefix: 'https://accounts.google.com/v3/signin/'},
         {urlPrefix: 'https://login.microsoftonline.com/'},
     ]
 })

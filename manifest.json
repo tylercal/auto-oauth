@@ -1,9 +1,9 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
 
   "name": "Auto OAuth",
   "description": "Automatically log into sites with OAuth without having to always choose the account.",
-  "version": "1.1.1",
+  "version": "1.2.0",
 
   "options_page": "src/options.html",
 
@@ -13,11 +13,12 @@
     "128": "images/icon-128.png"
   },
 
-  "page_action": {
+  "action": {
     "default_icon": {
       "16": "images/icon-16.png",
       "48": "images/icon-48.png",
-      "128": "images/icon-128.png"},
+      "128": "images/icon-128.png"
+    },
     "default_title": "Auto OAuth",
     "default_popup": "src/menu.html"
   },
@@ -27,17 +28,25 @@
     "tabs",
     "contextMenus",
     "webNavigation",
-    "https://accounts.google.com/o/oauth2/*",
+    "scripting"
+  ],
+
+  "host_permissions": [
+    "https://accounts.google.com/*",
     "https://login.microsoftonline.com/*"
   ],
 
   "web_accessible_resources": [
-    "images/*",
-    "src/menu.html"
+    {
+      "resources": ["images/*", "src/menu.html"],
+      "matches": [
+        "https://accounts.google.com/*",
+        "https://login.microsoftonline.com/*"
+      ]
+    }
   ],
 
   "background": {
-    "scripts": ["src/pako.js","src/background.js"],
-    "persistent": false
+    "service_worker": "src/background.js"
   }
 }
