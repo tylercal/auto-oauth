@@ -8,41 +8,96 @@ function paramValue(url, key) {
     return (new URLSearchParams(new URL(url).search)).get(key)
 }
 
+function hostOf(value) {
+    if (!value) return null
+    try {
+        return new URL(
+            value.replace('storagerelay://https', 'https:/') // need to remove non URL protocol
+        ).host
+    } catch (e) {
+        return null
+    }
+}
+
 function autoHost(url) {
     console.log("Finding redirect for: "+url)
-    return new URL(
-        paramValue(url, 'redirect_uri')
-        .replace('storagerelay://https', 'https:/') // need to remove non URL protocol
-    ).host
+    return hostOf(paramValue(url, 'redirect_uri'))
+}
+
+// Google Identity Services popups send redirect_uri=gis_transform, a marker rather
+// than a URL, so there is no host to read there. Those flows carry the site being
+// logged into in origin/app_domain instead.
+function hostFromOrigin(url) {
+    return hostOf(paramValue(url, 'origin')) || hostOf(paramValue(url, 'app_domain'))
 }
 
 function hostFromSaml(url) {
     console.log("Finding redirect for SAML: "+url)
-    let component = decodeURIComponent(paramValue(url, 'SAMLRequest'))
-    let charData = pako.inflateRaw(new Uint8Array(atob(component).split('').map(function(x){return x.charCodeAt(0);})))
-    let xml = String.fromCharCode.apply(null, new Uint16Array(charData))
-    let match = xml.match(/<saml:Issuer[^>]*>([^<]+)<\/saml:Issuer>/)
-    if (!match) return null
-    return new URL(match[1]).host
+    try {
+        let component = decodeURIComponent(paramValue(url, 'SAMLRequest'))
+        let charData = pako.inflateRaw(new Uint8Array(atob(component).split('').map(function(x){return x.charCodeAt(0);})))
+        let xml = String.fromCharCode.apply(null, new Uint16Array(charData))
+        let match = xml.match(/<saml:Issuer[^>]*>([^<]+)<\/saml:Issuer>/)
+        if (!match) return null
+        return hostOf(match[1])
+    } catch (e) {
+        console.log("Could not read SAMLRequest: "+e)
+        return null
+    }
 }
 
-function redirect(tab, hint) {
-    let url = tab.url
-    let dest
+// Runs in the page, not here: click the row for `hint` on Google's v3 chooser.
+// The list renders after onCompleted fires, so keep looking for a short while.
+function clickAccount(hint) {
+    let wanted = hint.toLowerCase()
+    let attempts = 50
 
-    if (url.indexOf('/v3/signin/') > 0) {
-        // v3 accountchooser ignores login_hint, so redirect via the classic OAuth endpoint
-        let params = new URLSearchParams(new URL(url).search)
-        let oauthParams = new URLSearchParams()
-        for (let key of ['client_id', 'redirect_uri', 'response_type', 'scope', 'state']) {
-            if (params.has(key)) oauthParams.set(key, params.get(key))
-        }
-        oauthParams.set('login_hint', hint)
-        dest = 'https://accounts.google.com/o/oauth2/auth?' + oauthParams.toString()
-    } else {
-        dest = url.replace(/prompt=[^&]+/, '') + "&login_hint=" + hint
+    let CLICKABLE = 'a, button, [role="link"], [role="button"]'
+
+    function clickableFor(el) {
+        return el.querySelector(CLICKABLE) || el.closest(CLICKABLE)
     }
 
+    function target() {
+        let tagged = [...document.querySelectorAll('[data-email], [data-identifier]')].find(el =>
+            (el.dataset.email || el.dataset.identifier || '').toLowerCase() === wanted
+        )
+        if (tagged) return clickableFor(tagged)
+
+        // v3 renders each account as a list item wrapping a link; only ever click one
+        // of those, so a password or challenge page showing the address is left alone
+        let row = [...document.querySelectorAll('li')].find(li =>
+            (li.innerText || '').toLowerCase().includes(wanted) && li.querySelector(CLICKABLE)
+        )
+        return row && clickableFor(row)
+    }
+
+    function attempt() {
+        let found = target()
+        if (found) {
+            found.click()
+        } else if (attempts-- > 0) {
+            setTimeout(attempt, 200)
+        } else {
+            console.log("Auto OAuth: no account row matching " + hint)
+            let spinner = document.getElementById('auto-oauth-spinner')
+            if (spinner) spinner.remove()
+        }
+    }
+
+    attempt()
+}
+
+async function redirect(tab, hint) {
+    // The v3 chooser ignores login_hint, and a GIS popup's redirect_uri is not a real
+    // URL, so there is no OAuth request to rebuild. Pick the account on the page instead.
+    if (tab.url.indexOf('/v3/signin/') > 0) {
+        console.log("Selecting "+hint+" on the account chooser at "+new Date())
+        await chrome.scripting.executeScript({target: {tabId: tab.id}, func: clickAccount, args: [hint]})
+        return
+    }
+
+    let dest = tab.url.replace(/prompt=[^&]+/, '') + "&login_hint=" + hint
     console.log("Attempting redirect at "+new Date())
     console.log(dest)
     chrome.tabs.update(tab.id, {url: dest})
@@ -75,6 +130,7 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
     } else if (url.indexOf("SAMLRequest") > 0) {
         host = hostFromSaml(url)
     }
+    if (!host) host = hostFromOrigin(url)
 
     if (host) {
         chrome.action.enable(details.tabId)

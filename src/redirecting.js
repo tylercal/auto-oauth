@@ -3,6 +3,8 @@
     let title = document.createElement('h1')
     let icon = document.createElement('object')
 
+    div.id = 'auto-oauth-spinner' // so the auto-select can clear it if no account matches
+
     title.innerText = "Auto choosing..."
     icon.data = chrome.runtime.getURL("images/icon.svg")
     icon.width = '64'

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Auto OAuth is a Chrome Extension (Manifest V3) that automatically selects the user's preferred Google or Microsoft account on OAuth login pages. Users configure a preferred identity per site, and the extension auto-redirects on future visits.
 
-**Version**: 1.2.0
+**Version**: 1.2.1
 **License**: AGPL-3.0
 **Language**: Vanilla JavaScript (no frameworks, no build system, no npm)
 
@@ -66,7 +66,28 @@ The popup (`menu.js`) reads the host directly from `chrome.storage.session` — 
 
 - **Google OAuth**: Extracts `redirect_uri` param → parses hostname (handles `storagerelay://` protocol)
 - **Microsoft SAML**: Extracts `SAMLRequest` param → base64-decodes → pako inflateRaw → regex extracts `saml:Issuer` hostname
+- **Google Identity Services popups**: send `redirect_uri=gis_transform`, which is a marker
+  rather than a URL. When neither of the above yields a host, fall back to the `origin` /
+  `app_domain` params, which carry the site being logged into.
 - All URLs are run through `decodeURI()` to handle encoded redirects
+- Every host parse is failure-tolerant. A URL that cannot be parsed must return `null`, not
+  throw — the parsers run inside the `webNavigation.onCompleted` listener, and an exception
+  there aborts the whole handler, so the tab never gets its host recorded in session storage
+  and the popup menu silently comes up empty.
+
+## Choosing the account
+
+Two mechanisms, picked by URL:
+
+- **Classic endpoints** (`/o/oauth2/`, Microsoft): re-navigate the tab with `login_hint`
+  appended and `prompt` stripped.
+- **Google v3** (`/v3/signin/`): the chooser ignores `login_hint`, and a GIS popup's
+  `redirect_uri` is not a real URL, so there is no OAuth request to rebuild. Instead
+  `clickAccount()` is injected into the page (via `chrome.scripting.executeScript` with
+  `func`/`args`) and clicks the matching account row, polling briefly because the list
+  renders after `onCompleted` fires. It only ever clicks a list item that wraps a link,
+  so a password or challenge page displaying the address is left alone, and it clears the
+  `#auto-oauth-spinner` overlay if nothing matches rather than leaving it spinning.
 
 ## Notes
 
